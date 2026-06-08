@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+data/chroma_db/
+data/landing/legal/*.pdf
+data/landing/legal/*.docx
+data/landing/news/*.json
+*.egg-info/
+.pytest_cache/

@@ -1,18 +1,8 @@
 """
 Task 3 — Convert toàn bộ file trong data/landing/ thành Markdown.
 
-Sử dụng MarkItDown của Microsoft:
-    https://github.com/microsoft/markitdown
-
-Cài đặt:
-    pip install markitdown
-
-Hướng dẫn:
-    1. Scan toàn bộ file trong data/landing/ (PDF, DOCX, JSON)
-    2. Convert sang Markdown
-    3. Lưu vào data/standardized/ giữ nguyên cấu trúc thư mục
+Sử dụng MarkItDown (Microsoft): pip install markitdown
 """
-
 import json
 from pathlib import Path
 
@@ -21,63 +11,62 @@ from markitdown import MarkItDown
 LANDING_DIR = Path(__file__).parent.parent / "data" / "landing"
 OUTPUT_DIR = Path(__file__).parent.parent / "data" / "standardized"
 
+_md = MarkItDown()
 
-def convert_legal_docs():
-    """Convert PDF/DOCX files trong data/landing/legal/ sang markdown."""
+
+def convert_legal_docs() -> int:
+    """Convert PDF/DOCX trong data/landing/legal/ sang .md."""
     legal_dir = LANDING_DIR / "legal"
-    output_dir = OUTPUT_DIR / "legal"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = OUTPUT_DIR / "legal"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    md = MarkItDown()
+    supported = {".pdf", ".docx", ".doc"}
+    converted = 0
+    for src in legal_dir.iterdir():
+        if src.suffix.lower() not in supported:
+            continue
+        out = out_dir / (src.stem + ".md")
+        print(f"  Converting: {src.name}")
+        result = _md.convert(str(src))
+        out.write_text(result.text_content, encoding="utf-8")
+        print(f"  ✓ {out.name} ({len(result.text_content)} chars)")
+        converted += 1
+    return converted
 
-    for filepath in legal_dir.iterdir():
-        if filepath.suffix.lower() in (".pdf", ".docx", ".doc"):
-            print(f"Converting: {filepath.name}")
-            # TODO: Convert và lưu file
-            # result = md.convert(str(filepath))
-            # output_path = output_dir / f"{filepath.stem}.md"
-            # output_path.write_text(result.text_content, encoding="utf-8")
-            # print(f"  ✓ Saved: {output_path}")
-            raise NotImplementedError("Implement convert_legal_docs")
 
-
-def convert_news_articles():
-    """Convert JSON crawled articles trong data/landing/news/ sang markdown."""
+def convert_news_articles() -> int:
+    """Convert JSON news files sang .md với metadata header."""
     news_dir = LANDING_DIR / "news"
-    output_dir = OUTPUT_DIR / "news"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = OUTPUT_DIR / "news"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    for filepath in news_dir.iterdir():
-        if filepath.suffix.lower() == ".json":
-            print(f"Converting: {filepath.name}")
-            # TODO: Đọc JSON, extract content_markdown, lưu thành .md
-            # data = json.loads(filepath.read_text(encoding="utf-8"))
-            # output_path = output_dir / f"{filepath.stem}.md"
-            #
-            # # Thêm metadata header
-            # header = f"# {data.get('title', 'Unknown')}\n\n"
-            # header += f"**Source:** {data.get('url', 'N/A')}\n"
-            # header += f"**Crawled:** {data.get('date_crawled', 'N/A')}\n\n---\n\n"
-            #
-            # content = header + data.get("content_markdown", "")
-            # output_path.write_text(content, encoding="utf-8")
-            # print(f"  ✓ Saved: {output_path}")
-            raise NotImplementedError("Implement convert_news_articles")
+    converted = 0
+    for src in news_dir.iterdir():
+        if src.suffix != ".json":
+            continue
+        data = json.loads(src.read_text(encoding="utf-8"))
+        out = out_dir / (src.stem + ".md")
+        lines = [
+            f"# {data.get('title', src.stem)}",
+            "",
+            f"**URL:** {data.get('url', '')}",
+            f"**Crawled:** {data.get('date_crawled', '')}",
+            "",
+            data.get("content", ""),
+        ]
+        out.write_text("\n".join(lines), encoding="utf-8")
+        print(f"  ✓ {out.name}")
+        converted += 1
+    return converted
 
 
 def convert_all():
-    """Convert toàn bộ files."""
-    print("=" * 50)
-    print("Task 3: Convert to Markdown (MarkItDown)")
-    print("=" * 50)
-
-    print("\n--- Legal Documents ---")
-    convert_legal_docs()
-
-    print("\n--- News Articles ---")
-    convert_news_articles()
-
-    print("\n✓ Done! Output tại:", OUTPUT_DIR)
+    print("Converting legal docs...")
+    n1 = convert_legal_docs()
+    print(f"\nConverting news articles...")
+    n2 = convert_news_articles()
+    print(f"\nDone: {n1} legal + {n2} news = {n1 + n2} total files")
+    print("Output:", OUTPUT_DIR)
 
 
 if __name__ == "__main__":

@@ -518,7 +518,56 @@ run_dashboard()
 ### Kiến Trúc Hệ Thống
 
 ```
-[Vẽ diagram kiến trúc ở đây]
+User
+  │
+  ▼
+Streamlit Chat UI
+group_project/app.py
+  │
+  ├─ Conversation memory
+  │   └─ Recent turns are appended to the current query for follow-up questions
+  │
+  ▼
+Retrieval Pipeline
+src/task9_retrieval_pipeline.py
+  │
+  ├─ Semantic Search
+  │   └─ src/task5_semantic_search.py
+  │      └─ ChromaDB vectors from Task 4
+  │
+  ├─ Lexical Search
+  │   └─ src/task6_lexical_search.py
+  │      └─ BM25 over markdown chunks
+  │
+  ├─ Merge + Rerank
+  │   └─ src/task7_reranking.py
+  │      └─ RRF merge + Jina rerank fallback to score sort
+  │
+  └─ Fallback when hybrid score is weak
+      └─ src/task8_pageindex_vectorless.py
+         └─ PageIndex vectorless retrieval
+  │
+  ▼
+Generation With Citation
+src/task10_generation.py
+  │
+  ├─ Reorder context chunks to reduce lost-in-the-middle
+  ├─ Inject SYSTEM_PROMPT + retrieved source metadata
+  └─ OpenAI generation with citation format [Nguồn, Năm]
+  │
+  ▼
+Display
+  ├─ Answer with citations
+  ├─ Source documents/chunks
+  └─ Scores, retrieval route, metadata
+
+Evaluation Pipeline
+group_project/evaluation/eval_pipeline.py
+  │
+  ├─ Load 15-case golden dataset
+  ├─ Evaluate faithfulness, answer relevance, context recall, context precision
+  ├─ Compare A/B configs: hybrid_rerank vs lexical_only
+  └─ Export report to group_project/evaluation/results.md
 ```
 
 ---
@@ -527,10 +576,12 @@ run_dashboard()
 
 | Thành viên | MSSV | Nhiệm vụ | Trạng thái |
 |-----------|------|----------|------------|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Nông Đức Hoàng | 2A202600580 | Xử lý dữ liệu (Data Ingestion): Crawl báo mạng, tải PDF luật, xử lý lỗi và chuyển đổi sang định dạng chuẩn Markdown | Hoàn thành |
+| Lương Thị Hồng Nhung | 2A202600811 | Xử lý Vector (Chunking & Database): Cắt nhỏ dữ liệu (Chunking) và nhúng vector BGE-M3 để lưu vào ChromaDB | Hoàn thành |
+| Lê Quang Minh | 2A202600801 | Hệ thống truy xuất (Retrieval Pipeline): Xây dựng Semantic Search, BM25 Lexical và cấu hình Fallback PageIndex | Hoàn thành |
+| Nguyễn Quang Anh | 2A202600608 | Lọc & Tích hợp LLM: Code thuật toán gộp điểm RRF, sắp xếp lại (Reorder) chống Lost-in-the-middle và kết nối Gemini API | Hoàn thành |
+| Lưu Xuân Thế | 2A202600983 | Xây dựng Giao diện (UI/UX Chatbot): Dựng app Chainlit, tích hợp tính năng ghi nhớ ngữ cảnh (Memory) và sidebar nguồn | Hoàn thành |
+| Nguyễn Đức Minh | 2A202600604 | Quản trị dự án & QA: Tối ưu bộ Test suite Pytest, sửa các lỗi tràn RAM (Memory Leak), vẽ sơ đồ kiến trúc và tổng hợp README | Hoàn thành |
 
 ---
 

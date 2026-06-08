@@ -2,38 +2,46 @@
 Task 4 — Chunking & Indexing vào ChromaDB.
 
 Chunking: RecursiveCharacterTextSplitter
-- chunk_size=500: đủ ngữ cảnh per chunk, không quá dài làm embedding mờ nghĩa
-- chunk_overlap=50: giữ liên kết ngữ nghĩa tại ranh giới chunk (10% overlap)
+- chunk_size=800: đủ ngữ cảnh cho văn bản pháp lý/tin tức dài; nhỏ hơn 1000
+  để tránh embedding mờ nghĩa khi đoạn văn quá dài
+- chunk_overlap=100: ~12.5% overlap để giữ ngữ cảnh tại ranh giới chunk
+- separators: ưu tiên tách ở \n\n (đoạn), \n (dòng), ". " (câu), rồi space
 
-Embedding: sentence-transformers/all-MiniLM-L6-v2
-- 384 dimensions, chạy được CPU, không cần API key
-- Đủ chất lượng cho retrieval tiếng Việt ở domain pháp lý cụ thể
+Embedding: OpenAI text-embedding-3-small
+- 1536 dimensions, đa ngôn ngữ (kể cả tiếng Việt), gọi qua API
+- Dùng API thay vì download model local để tiết kiệm thời gian cài đặt
+- Cần OPENAI_API_KEY trong file .env
 
 Vector Store: ChromaDB (local persistent)
 - Không cần Docker, lưu vào data/chroma_db/
+- Đủ cho single-node RAG; upgrade lên Weaviate khi cần hybrid search
 """
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sentence_transformers import SentenceTransformer
+from openai import OpenAI
 import chromadb
+
+load_dotenv()
 
 STANDARDIZED_DIR = Path(__file__).parent.parent / "data" / "standardized"
 CHROMA_DIR = Path(__file__).parent.parent / "data" / "chroma_db"
 COLLECTION_NAME = "rag_documents"
 
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
+CHUNK_SIZE = 800
+CHUNK_OVERLAP = 100
 CHUNKING_METHOD = "recursive"
 
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-EMBEDDING_DIM = 384
+EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_DIM = 1536
 VECTOR_STORE = "chromadb"
 
 _splitter = RecursiveCharacterTextSplitter(
     chunk_size=CHUNK_SIZE,
     chunk_overlap=CHUNK_OVERLAP,
-    separators=["\n\n", "\n", "。", ". ", " ", ""],
+    separators=["\n\n", "\n", ". ", ", ", " ", ""],
 )
 
 
@@ -77,14 +85,27 @@ def chunk_documents(documents: list[dict]) -> list[dict]:
     return chunks
 
 
+def embed_texts(client: OpenAI, texts: list[str]) -> list[list[float]]:
+    """Gọi OpenAI Embeddings API cho một batch texts."""
+    response = client.embeddings.create(model=EMBEDDING_MODEL, input=texts)
+    return [item.embedding for item in response.data]
+
+
 def get_collection():
     """Get or create ChromaDB persistent collection."""
-    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-    return client.get_or_create_collection(COLLECTION_NAME)
+    chroma = chromadb.PersistentClient(path=str(CHROMA_DIR))
+    return chroma.get_or_create_collection(
+        name=COLLECTION_NAME,
+        metadata={"hnsw:space": "cosine"},
+    )
 
 
 def index_documents():
-    """Load → chunk → embed → upsert into ChromaDB."""
+    """Load → chunk → embed (OpenAI) → upsert into ChromaDB."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise EnvironmentError("OPENAI_API_KEY không tìm thấy. Tạo file .env với OPENAI_API_KEY=sk-...")
+
     print("Loading documents...")
     docs = load_documents()
     if not docs:
@@ -93,17 +114,18 @@ def index_documents():
 
     print(f"  {len(docs)} docs")
     chunks = chunk_documents(docs)
-    print(f"  {len(chunks)} chunks")
+    print(f"  {len(chunks)} chunks (chunk_size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP})")
 
-    print(f"Loading model: {EMBEDDING_MODEL}")
-    model = SentenceTransformer(EMBEDDING_MODEL)
-
+    client = OpenAI(api_key=api_key)
     collection = get_collection()
-    batch_size = 64
-    for i in range(0, len(chunks), batch_size):
+
+    # OpenAI rate limit: batch tối đa 2048 inputs, nhưng giữ nhỏ để an toàn
+    batch_size = 100
+    total = len(chunks)
+    for i in range(0, total, batch_size):
         batch = chunks[i:i + batch_size]
         texts = [c["content"] for c in batch]
-        embeddings = model.encode(texts, show_progress_bar=False).tolist()
+        embeddings = embed_texts(client, texts)
         ids = [f"chunk_{i + j}" for j in range(len(batch))]
         collection.upsert(
             ids=ids,
@@ -111,7 +133,10 @@ def index_documents():
             documents=texts,
             metadatas=[c["metadata"] for c in batch],
         )
-    print(f"✓ Indexed {len(chunks)} chunks into ChromaDB at {CHROMA_DIR}")
+        print(f"  Indexed {min(i + batch_size, total)}/{total} chunks...")
+
+    print(f"✓ Indexed {total} chunks into ChromaDB at {CHROMA_DIR}")
+    print(f"  Model: {EMBEDDING_MODEL} ({EMBEDDING_DIM} dims)")
 
 
 if __name__ == "__main__":

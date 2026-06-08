@@ -96,11 +96,36 @@ def rerank(query: str, candidates: list[dict], top_k: int = 5) -> list[dict]:
 
 
 if __name__ == "__main__":
-    dummy = [
-        {"content": "Điều 248: Tội tàng trữ trái phép chất ma tuý", "score": 0.8, "metadata": {}},
-        {"content": "Nghệ sĩ X bị bắt vì sử dụng ma tuý", "score": 0.7, "metadata": {}},
-        {"content": "Hình phạt tù từ 2-7 năm cho tội tàng trữ", "score": 0.6, "metadata": {}},
-    ]
-    results = rerank("hình phạt tàng trữ ma tuý", dummy, top_k=2)
-    for r in results:
-        print(f"[{r['score']:.3f}] {r['content']}")
+    import sys
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
+    from task5_semantic_search import semantic_search
+    from task6_lexical_search import lexical_search
+
+    QUERY = "hình phạt tội tàng trữ ma túy"
+    TOP_K = 5
+
+    print(f"Query: {QUERY}\n")
+
+    semantic = semantic_search(QUERY, top_k=TOP_K)
+    lexical = lexical_search(QUERY, top_k=TOP_K)
+
+    print("── Semantic (task5) ──")
+    for r in semantic:
+        print(f"  [{r['score']:.4f}] {r['content'][:90]}...")
+
+    print("\n── BM25 (task6) ──")
+    for r in lexical:
+        print(f"  [{r['score']:.4f}] {r['content'][:90]}...")
+
+    # RRF merge: gộp 2 ranked lists → 1 list theo Reciprocal Rank Fusion
+    merged = rerank_rrf([semantic, lexical])
+    print("\n── RRF merged (task7) ──")
+    for r in merged[:TOP_K]:
+        print(f"  [rrf={r['rrf_score']:.4f} orig={r['score']:.4f}] {r['content'][:90]}...")
+
+    # Cross-encoder rerank (Jina API nếu có key, fallback sort by score)
+    candidates = merged[:TOP_K * 2]
+    reranked = rerank(QUERY, candidates, top_k=TOP_K)
+    print("\n── Reranked (task7) ──")
+    for r in reranked:
+        print(f"  [{r['score']:.4f}] {r['content'][:90]}...")

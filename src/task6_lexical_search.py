@@ -2,77 +2,82 @@
 Task 6 — Lexical Search Module (BM25).
 
 BM25 (Okapi BM25) — Robertson & Sparck Jones:
-  score(q,d) = Σ IDF(qi) × (tf(qi,d)×(k1+1)) / (tf(qi,d) + k1×(1-b+b×|d|/avgdl))
+  score(q,d) = Σ IDF(qi) × tf(qi,d)×(k1+1) / (tf(qi,d) + k1×(1-b+b×|d|/avgdl))
   k1=1.5 (term saturation), b=0.75 (length normalization)
 
-Tokenize: lowercase + whitespace split — đủ tốt cho tiếng Việt domain pháp lý.
-BM25 index được build lúc import module, load từ data/standardized/.
+BM25 index build trên chunks (cùng đơn vị với task5/ChromaDB) để có thể
+merge kết quả trong hybrid search ở task9.
+
+Tokenize: lowercase + split() — đủ cho tiếng Việt đã được unicode normalize.
+Index được build một lần lúc import module (lazy, chỉ khi hàm được gọi lần đầu).
 """
-from pathlib import Path
+from __future__ import annotations
 
 from rank_bm25 import BM25Okapi
 
-STANDARDIZED_DIR = Path(__file__).parent.parent / "data" / "standardized"
+try:
+    from .task4_chunking_indexing import chunk_documents, load_documents
+except ImportError:  # Allows running this file directly: python src/task6_lexical_search.py
+    from task4_chunking_indexing import chunk_documents, load_documents
+
+_chunks: list[dict] | None = None
+_bm25: BM25Okapi | None = None
 
 
-def _load_corpus() -> list[dict]:
-    corpus = []
-    for doc_type in ("legal", "news"):
-        subdir = STANDARDIZED_DIR / doc_type
-        if not subdir.exists():
-            continue
-        for md_file in subdir.glob("*.md"):
-            content = md_file.read_text(encoding="utf-8").strip()
-            if content:
-                corpus.append({
-                    "content": content,
-                    "metadata": {"source": md_file.name, "doc_type": doc_type},
-                })
-    return corpus
+def _ensure_index() -> None:
+    global _chunks, _bm25
+    if _bm25 is not None:
+        return
+    _chunks = chunk_documents(load_documents())
+    tokenized = [_tokenize(c["content"]) for c in _chunks]
+    _bm25 = BM25Okapi(tokenized) if tokenized else None
 
 
 def _tokenize(text: str) -> list[str]:
     return text.lower().split()
 
 
-_corpus = _load_corpus()
-_tokenized = [_tokenize(d["content"]) for d in _corpus]
-_bm25 = BM25Okapi(_tokenized) if _tokenized else None
-
-
 def lexical_search(query: str, top_k: int = 10) -> list[dict]:
     """
-    BM25 lexical search.
+    BM25 lexical search trên chunk corpus.
 
     Args:
         query: Câu truy vấn
-        top_k: Số lượng kết quả tối đa
+        top_k: Số kết quả trả về
 
     Returns:
         List of {'content': str, 'score': float, 'metadata': dict}
         sorted by BM25 score descending.
     """
-    if _bm25 is None or not _corpus:
+    _ensure_index()
+    if _bm25 is None or not _chunks:
         return []
 
     scores = _bm25.get_scores(_tokenize(query))
-    ranked = sorted(
-        range(len(_corpus)),
+    ranked_indices = sorted(
+        range(len(_chunks)),
         key=lambda i: scores[i],
         reverse=True,
     )[:top_k]
 
     return [
         {
-            "content": _corpus[i]["content"],
-            "score": float(scores[i]),
-            "metadata": _corpus[i]["metadata"],
+            "content": _chunks[i]["content"],
+            "score": round(float(scores[i]), 4),
+            "metadata": _chunks[i]["metadata"],
         }
-        for i in ranked
+        for i in ranked_indices
+        if scores[i] > 0
     ]
 
 
 if __name__ == "__main__":
-    results = lexical_search("Điều 248 tàng trữ trái phép chất ma tuý", top_k=5)
-    for r in results:
-        print(f"[{r['score']:.3f}] {r['content'][:100]}...")
+    queries = [
+        "Điều 249 tàng trữ trái phép chất ma túy",
+        "ca sĩ bị bắt liên quan ma túy",
+    ]
+    for q in queries:
+        print(f"\nQuery: {q}")
+        results = lexical_search(q, top_k=3)
+        for r in results:
+            print(f"  [{r['score']:.4f}] ({r['metadata'].get('doc_type')}) {r['content'][:100]}...")

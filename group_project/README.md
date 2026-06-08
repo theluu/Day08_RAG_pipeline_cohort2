@@ -151,28 +151,84 @@ run_dashboard()
 
 ### Deliverable Evaluation
 
-- [ ] File `group_project/evaluation/golden_dataset.json` — 15+ cặp Q&A
-- [ ] File `group_project/evaluation/eval_pipeline.py` — script chạy evaluation
-- [ ] File `group_project/evaluation/results.md` — bảng điểm + phân tích
-- [ ] So sánh A/B ít nhất 2 configs
+- [x] File `group_project/evaluation/golden_dataset.json` — 15+ cặp Q&A
+- [x] File `group_project/evaluation/eval_pipeline.py` — script chạy evaluation
+- [x] File `group_project/evaluation/results.md` — bảng điểm + phân tích
+- [x] So sánh A/B ít nhất 2 configs
+
+### Yêu Cầu 2 — Evaluation Pipeline
+
+Implemented in `group_project/evaluation/eval_pipeline.py`.
+
+Framework choice: custom deterministic evaluator. It keeps the required four
+metrics without adding a separate judge dependency:
+
+- Faithfulness: answer terms grounded in retrieved context.
+- Answer Relevance: expected answer coverage in actual answer.
+- Context Recall: expected evidence hints found in retrieved context.
+- Context Precision: fraction of retrieved chunks containing expected hints.
+
+A/B configs:
+
+- Config A `hybrid_rerank`: Task 9 full pipeline + Task 10 generation.
+- Config B `lexical_only`: Task 6 BM25 baseline + Task 10 generation.
+
+Run:
+
+```bash
+.venv311/bin/python group_project/evaluation/eval_pipeline.py
+```
+
+Latest report: `group_project/evaluation/results.md`.
 
 ---
 
 ## Yêu Cầu Chung
 
-1. **Tích hợp pipeline** từ bài cá nhân của các thành viên
-2. **Demo hoạt động được** trong buổi trình bày (chạy local hoặc deploy)
-3. **Evaluation pipeline** chạy được và có báo cáo kết quả
-4. **Code push lên repository** chung của nhóm
-5. **README** mô tả kiến trúc và phân công (điền bên dưới)
+| Yêu cầu | Trạng thái | Minh chứng |
+|---------|------------|------------|
+| Tích hợp pipeline từ bài cá nhân | Done | `group_project/app.py` gọi Task 9 `retrieve()` và Task 10 `generate_with_citation()` |
+| Demo hoạt động được trong buổi trình bày | Done | Streamlit app chạy local bằng lệnh `streamlit run group_project/app.py` |
+| Evaluation pipeline chạy được và có báo cáo kết quả | Done | `group_project/evaluation/eval_pipeline.py` đã chạy và xuất `group_project/evaluation/results.md` |
+| README mô tả kiến trúc | Done | Phần "Kiến Trúc Hệ Thống" bên dưới mô tả Streamlit -> Retrieval -> Generation -> Display |
+
+### Demo Checklist
+
+- Chat UI: `group_project/app.py`
+- Conversation memory: recent chat turns được thêm vào retrieval query.
+- Citation: Task 10 sinh câu trả lời có citation dạng `[Nguồn, Năm]`.
+- Source display: mỗi câu trả lời hiển thị chunks, score, route và metadata.
+- Evaluation report: `group_project/evaluation/results.md`.
 
 ---
 
 ## Kiến Trúc Hệ Thống
 
 ```
-[Vẽ diagram kiến trúc ở đây]
+Streamlit Chat UI (group_project/app.py)
+  -> Conversation memory contextualizes follow-up questions
+  -> Task 9 retrieve()
+       -> Task 5 semantic search
+       -> Task 6 BM25 lexical search
+       -> Task 7 RRF merge + rerank
+       -> Task 8 PageIndex fallback when hybrid score is weak
+  -> Task 10 generate_with_citation()
+       -> lost-in-the-middle context reordering
+       -> OpenAI answer generation with [Nguồn, Năm] citations
+  -> Display answer + source chunks + metadata
 ```
+
+### Yêu Cầu 1 — RAG Chatbot
+
+Implemented in `group_project/app.py`.
+
+| Yêu cầu | Trạng thái | Ghi chú |
+|---------|------------|---------|
+| Giao diện chat | Done | Streamlit `st.chat_message` + `st.chat_input` |
+| Trả lời có citation | Done | Dùng Task 10, citation dạng `[Nguồn, Năm]` |
+| Follow-up questions | Done | Recent conversation turns được inject vào retrieval query |
+| Hiển thị source documents | Done | Mỗi chunk có content, score, route, metadata |
+| Pipeline tích hợp | Done | Streamlit -> Task 9 -> Task 10 -> Display |
 
 ---
 
@@ -194,10 +250,16 @@ run_dashboard()
 pip install -r requirements.txt
 
 # Chạy app
-streamlit run app.py
-# hoặc
-chainlit run app.py
+streamlit run group_project/app.py
 ```
+
+Nếu dùng virtualenv local của repo:
+
+```bash
+.venv311/bin/streamlit run group_project/app.py --server.port 8502 --server.address 127.0.0.1
+```
+
+Mở trình duyệt tại `http://127.0.0.1:8502`.
 
 ---
 

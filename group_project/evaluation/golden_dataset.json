@@ -1,17 +1,92 @@
 [
   {
-    "question": "Hình phạt cho tội tàng trữ trái phép chất ma tuý theo Điều 249 Bộ luật Hình sự?",
-    "expected_answer": "Phạt tù từ 1 đến 5 năm đối với trường hợp tàng trữ từ 1g đến dưới 5g heroin hoặc cocaine, hoặc chất ma tuý khác với khối lượng tương đương.",
-    "expected_context": "Bộ luật Hình sự 2015, Điều 249"
+    "id": "legal_001",
+    "question": "Điều 249 Bộ luật Hình sự quy định hình phạt cơ bản cho tội tàng trữ trái phép chất ma túy như thế nào?",
+    "expected_answer": "Người tàng trữ trái phép chất ma túy thuộc trường hợp cơ bản có thể bị phạt tù từ 1 năm đến 5 năm.",
+    "expected_context": ["Điều 249", "tàng trữ trái phép chất ma túy", "phạt tù từ 01 năm đến 05 năm", "bo-luat-hinh-su-2015-sua-doi-2017.md"]
   },
   {
-    "question": "Luật Phòng chống ma tuý 2021 quy định những hình thức cai nghiện nào?",
-    "expected_answer": "Cai nghiện tự nguyện tại gia đình, cai nghiện tự nguyện tại cộng đồng, cai nghiện tự nguyện tại cơ sở cai nghiện, và cai nghiện bắt buộc tại cơ sở cai nghiện.",
-    "expected_context": "Luật Phòng chống ma tuý 2021, Chương V"
+    "id": "legal_002",
+    "question": "Điều 248 Bộ luật Hình sự quy định gì về tội sản xuất trái phép chất ma túy?",
+    "expected_answer": "Điều 248 quy định hành vi sản xuất trái phép chất ma túy và các khung hình phạt tù tùy tính chất, khối lượng chất ma túy.",
+    "expected_context": ["Điều 248", "sản xuất trái phép chất ma túy", "bo-luat-hinh-su-2015-sua-doi-2017.md"]
   },
   {
-    "question": "Danh mục các chất ma tuý thuộc nhóm I theo quy định pháp luật Việt Nam gồm những chất nào?",
-    "expected_answer": "Nhóm I gồm các chất ma tuý tuyệt đối cấm sử dụng trong y học và đời sống, bao gồm heroin, cocaine, methamphetamine, MDMA (ecstasy), cannabis (cần sa), và các chất tương tự.",
-    "expected_context": "Nghị định 57/2022/NĐ-CP, Phụ lục I"
+    "id": "legal_003",
+    "question": "Luật Phòng, chống ma túy 2021 điều chỉnh những nội dung nào?",
+    "expected_answer": "Luật quy định về phòng, chống ma túy; quản lý người sử dụng trái phép chất ma túy; cai nghiện ma túy; trách nhiệm của cá nhân, gia đình, cơ quan, tổ chức; quản lý nhà nước và hợp tác quốc tế.",
+    "expected_context": ["Phạm vi điều chỉnh", "quản lý người sử dụng trái phép chất ma túy", "cai nghiện ma túy", "luat-phong-chong-ma-tuy-2021.md"]
+  },
+  {
+    "id": "legal_004",
+    "question": "Luật Phòng, chống ma túy 2021 định nghĩa chất ma túy là gì?",
+    "expected_answer": "Chất ma túy là chất gây nghiện, chất hướng thần được quy định trong danh mục chất ma túy do Chính phủ ban hành.",
+    "expected_context": ["Chất ma túy là chất gây nghiện", "chất hướng thần", "danh mục chất ma túy", "luat-phong-chong-ma-tuy-2021.md"]
+  },
+  {
+    "id": "legal_005",
+    "question": "Luật Phòng, chống ma túy 2021 quy định những hình thức cai nghiện nào?",
+    "expected_answer": "Luật có các hình thức cai nghiện tự nguyện và cai nghiện bắt buộc, gồm cai nghiện tại gia đình, cộng đồng hoặc cơ sở cai nghiện theo điều kiện luật định.",
+    "expected_context": ["cai nghiện ma túy tự nguyện", "cai nghiện ma túy bắt buộc", "cơ sở cai nghiện", "luat-phong-chong-ma-tuy-2021.md"]
+  },
+  {
+    "id": "legal_006",
+    "question": "Nghị định 105/2021 quy định trách nhiệm quản lý thuốc thú y có chứa chất ma túy như thế nào?",
+    "expected_answer": "Nghị định 105/2021 hướng dẫn quản lý thuốc thú y có chứa chất ma túy, tiền chất, bao gồm điều kiện, hồ sơ, báo cáo và kiểm soát theo quy định.",
+    "expected_context": ["thuốc thú y có chứa chất ma túy", "tiền chất", "nghi-dinh-105-2021.md"]
+  },
+  {
+    "id": "legal_007",
+    "question": "Tiền chất theo Luật Phòng, chống ma túy 2021 được hiểu là gì?",
+    "expected_answer": "Tiền chất là hóa chất không thể thiếu trong quá trình điều chế, sản xuất chất ma túy và thuộc danh mục tiền chất do Chính phủ ban hành.",
+    "expected_context": ["Tiền chất là hóa chất", "điều chế, sản xuất chất ma túy", "luat-phong-chong-ma-tuy-2021.md"]
+  },
+  {
+    "id": "legal_008",
+    "question": "Luật Phòng, chống ma túy 2021 nêu trách nhiệm của cá nhân, gia đình, cơ quan, tổ chức trong lĩnh vực nào?",
+    "expected_answer": "Luật nêu trách nhiệm của cá nhân, gia đình, cơ quan, tổ chức trong phòng, chống ma túy và quản lý người sử dụng trái phép chất ma túy.",
+    "expected_context": ["trách nhiệm của cá nhân, gia đình, cơ quan, tổ chức", "phòng, chống ma túy", "luat-phong-chong-ma-tuy-2021.md"]
+  },
+  {
+    "id": "news_001",
+    "question": "Theo bài VnExpress, Phúc XO bị bắt liên quan đến hoạt động nào?",
+    "expected_answer": "Phúc XO bị bắt trong vụ việc liên quan karaoke và nghi vấn/hoạt động sử dụng ma túy tại cơ sở karaoke.",
+    "expected_context": ["Phúc", "karaoke", "ma túy", "phuc-xo-va-em-trai-bi-bat-khan-cap-bao-vnexpress.md"]
+  },
+  {
+    "id": "news_002",
+    "question": "Bài viết về Phúc XO và 11 người bị bắt tạm giam nêu bối cảnh gì?",
+    "expected_answer": "Bài viết nêu việc Phúc XO cùng nhiều người liên quan vụ karaoke và ma túy bị bắt tạm giam.",
+    "expected_context": ["Phúc", "11 người", "bắt tạm giam", "ma túy", "phuc-xo-va-11-nguoi-bi-bat-tam-giam-bao-vnexpress.md"]
+  },
+  {
+    "id": "news_003",
+    "question": "Bài VnExpress về ma túy trong lối sống showbiz đề cập chủ đề chính nào?",
+    "expected_answer": "Bài viết đề cập tình trạng hoặc hệ lụy của ma túy trong lối sống showbiz và các trường hợp nghệ sĩ/người nổi tiếng liên quan.",
+    "expected_context": ["ma túy", "showbiz", "nghệ sĩ", "ma-tuy-trong-loi-song-showbiz-bao-vnexpress.md"]
+  },
+  {
+    "id": "news_004",
+    "question": "Bài Ngôi Sao về những nghệ sĩ Việt ngã ngựa vì ma túy nói về điều gì?",
+    "expected_answer": "Bài viết tổng hợp các trường hợp nghệ sĩ Việt vướng bê bối hoặc pháp lý liên quan đến ma túy.",
+    "expected_context": ["nghệ sĩ Việt", "ma túy", "ngã ngựa", "nhung-nghe-si-viet-nga-ngua-vi-ma-tuy-ngoi-sao.md"]
+  },
+  {
+    "id": "news_005",
+    "question": "Ca sĩ Châu Việt Cường bị đề nghị mức án nào trong bài báo?",
+    "expected_answer": "Bài báo nêu ca sĩ Châu Việt Cường bị đề nghị mức án khoảng 13 đến 14 năm tù.",
+    "expected_context": ["Châu Việt Cường", "13-14 năm tù", "ca-si-chau-viet-cuong-bi-e-nghi-13-14-nam-tu.md"]
+  },
+  {
+    "id": "news_006",
+    "question": "Bài về ca sĩ Miu Lê bị bắt ở bãi biển nêu cáo buộc gì?",
+    "expected_answer": "Bài viết nêu ca sĩ Miu Lê bị bắt quả tang cùng nhóm bạn sử dụng ma túy ở bãi biển.",
+    "expected_context": ["Miu Lê", "bắt quả tang", "dùng ma túy", "bãi biển", "ca-si-miu-le-bi-bat-qua-tang-dung-ma-tuy-o-bai-bien.md"]
+  },
+  {
+    "id": "news_007",
+    "question": "Bài về Long Nhật và Sơn Ngọc Minh nêu hai ca sĩ liên quan đến vấn đề gì?",
+    "expected_answer": "Bài viết nêu ca sĩ Long Nhật và Sơn Ngọc Minh liên quan đến ma túy theo nội dung bài báo.",
+    "expected_context": ["Long Nhật", "Sơn Ngọc Minh", "ma túy", "bat-ca-si-long-nhat-va-ca-si-son-ngoc-minh-vi-lien-quan-ma-tuy-tuoi-tr.md"]
   }
 ]

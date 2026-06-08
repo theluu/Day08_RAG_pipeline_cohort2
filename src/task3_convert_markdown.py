@@ -50,9 +50,10 @@ def convert_news_articles() -> int:
             f"# {data.get('title', src.stem)}",
             "",
             f"**URL:** {data.get('url', '')}",
-            f"**Crawled:** {data.get('date_crawled', '')}",
+            f"**Crawled:** {data.get('crawl_date', data.get('date_crawled', ''))}",
+            f"**Source:** {data.get('source_domain', '')}",
             "",
-            data.get("content", ""),
+            data.get("content_markdown", data.get("content", "")),
         ]
         out.write_text("\n".join(lines), encoding="utf-8")
         print(f"  ✓ {out.name}")

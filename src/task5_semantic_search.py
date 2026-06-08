@@ -1,39 +1,75 @@
 """
 Task 5 — Semantic Search Module (Dense Retrieval).
 
-Query ChromaDB với vector embedding. Score = 1/(1+L2_distance) ∈ (0,1].
+Dùng cùng embedding model với Task 4 (OpenAI text-embedding-3-small) để
+encode query, rồi query ChromaDB collection đã index.
+
+Score: cosine similarity = 1 - cosine_distance
+- ChromaDB cosine space trả về distance ∈ [0, 2], trong đó:
+  0 = vectors giống hệt, 1 = vuông góc, 2 = đối ngược
+- score = 1 - distance → ∈ [-1, 1], cao hơn = liên quan hơn
 """
+import os
 from pathlib import Path
 
-from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
+from openai import OpenAI
 import chromadb
+
+load_dotenv()
 
 CHROMA_DIR = Path(__file__).parent.parent / "data" / "chroma_db"
 COLLECTION_NAME = "rag_documents"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_MODEL = "text-embedding-3-small"
 
-_model = SentenceTransformer(EMBEDDING_MODEL)
-_client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+_openai_client: OpenAI | None = None
+_collection = None
+
+
+def _get_client() -> OpenAI:
+    global _openai_client
+    if _openai_client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise EnvironmentError("OPENAI_API_KEY không tìm thấy trong .env")
+        _openai_client = OpenAI(api_key=api_key)
+    return _openai_client
+
+
+def _get_collection():
+    global _collection
+    if _collection is None:
+        client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+        _collection = client.get_or_create_collection(
+            name=COLLECTION_NAME,
+            metadata={"hnsw:space": "cosine"},
+        )
+    return _collection
+
+
+def _embed_query(query: str) -> list[float]:
+    response = _get_client().embeddings.create(model=EMBEDDING_MODEL, input=query)
+    return response.data[0].embedding
 
 
 def semantic_search(query: str, top_k: int = 10) -> list[dict]:
     """
-    Tìm kiếm ngữ nghĩa sử dụng vector similarity.
+    Tìm kiếm ngữ nghĩa bằng dense vector retrieval.
 
     Args:
         query: Câu truy vấn
-        top_k: Số lượng kết quả tối đa
+        top_k: Số kết quả trả về
 
     Returns:
         List of {'content': str, 'score': float, 'metadata': dict}
         sorted by score descending.
     """
-    collection = _client.get_or_create_collection(COLLECTION_NAME)
+    collection = _get_collection()
     count = collection.count()
     if count == 0:
         return []
 
-    query_embedding = _model.encode(query).tolist()
+    query_embedding = _embed_query(query)
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=min(top_k, count),
@@ -49,7 +85,7 @@ def semantic_search(query: str, top_k: int = 10) -> list[dict]:
         ):
             output.append({
                 "content": doc,
-                "score": 1.0 / (1.0 + dist),
+                "score": round(1.0 - dist, 4),
                 "metadata": meta or {},
             })
 
@@ -58,6 +94,12 @@ def semantic_search(query: str, top_k: int = 10) -> list[dict]:
 
 
 if __name__ == "__main__":
-    results = semantic_search("hình phạt cho tội tàng trữ ma tuý", top_k=5)
-    for r in results:
-        print(f"[{r['score']:.3f}] {r['content'][:100]}...")
+    queries = [
+        "hình phạt cho tội tàng trữ ma tuý",
+        "ca sĩ bị bắt vì liên quan ma túy",
+    ]
+    for q in queries:
+        print(f"\nQuery: {q}")
+        results = semantic_search(q, top_k=3)
+        for r in results:
+            print(f"  [{r['score']:.4f}] ({r['metadata'].get('doc_type')}) {r['content'][:100]}...")

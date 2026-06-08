@@ -8,6 +8,8 @@
 
 Xây dựng một RAG pipeline thực tế, end-to-end, từ thu thập dữ liệu pháp luật và báo chí về ma tuý → xử lý → indexing → retrieval (hybrid + vectorless fallback) → generation có citation.
 
+**Lưu ý runtime:** Project này dùng OpenAI API remote cho embeddings và generation (`text-embedding-3-small`, `gpt-4o-mini`). Không cần tải model local, không cần commit virtualenv/model weights lên GitHub.
+
 ---
 
 ## Chủ Đề Dữ Liệu
@@ -587,15 +589,54 @@ group_project/evaluation/eval_pipeline.py
 
 ### Hướng Dẫn Chạy
 
-```bash
-# Cài đặt dependencies
-pip install -r requirements.txt
+Project dùng OpenAI API key thay vì model local. Cần tạo `.env` trước khi chạy:
 
-# Chạy app
-streamlit run app.py
-# hoặc
-chainlit run app.py
+```bash
+cp .env.example .env
 ```
+
+Điền tối thiểu:
+
+```env
+OPENAI_API_KEY=sk-...
+```
+
+Optional:
+
+```env
+JINA_API_KEY=...        # Reranking API, nếu không có sẽ fallback sort theo score
+PAGEINDEX_API_KEY=...   # PageIndex fallback, nếu account còn credits
+PAGEINDEX_DOC_IDS=...   # Doc IDs đã upload sẵn lên PageIndex, nếu có
+```
+
+Chạy bằng virtualenv local:
+
+```bash
+python3 -m venv .venv311
+.venv311/bin/pip install -r requirements.txt
+```
+
+Index dữ liệu vào ChromaDB bằng OpenAI embeddings:
+
+```bash
+.venv311/bin/python src/task4_chunking_indexing.py
+```
+
+Chạy chatbot Streamlit:
+
+```bash
+.venv311/bin/streamlit run group_project/app.py --server.port 8502 --server.address 127.0.0.1
+```
+
+Mở trình duyệt tại `http://127.0.0.1:8502`.
+
+Chạy evaluation pipeline:
+
+```bash
+.venv311/bin/python group_project/evaluation/eval_pipeline.py
+```
+
+Report sẽ được ghi tại `group_project/evaluation/results.md`.
 
 ---
 
@@ -608,14 +649,18 @@ Hãy giữ lại repo này nếu như bạn học track 3 giai đoạn 2, chúng
 ## Cài Đặt Môi Trường
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv311
+.venv311/bin/pip install -r requirements.txt
 ```
 
-Tạo file `.env` từ `.env.example`:
+Tạo file `.env` từ `.env.example` và dùng OpenAI remote API:
+
 ```bash
 cp .env.example .env
-# Điền API keys vào .env
+# Điền OPENAI_API_KEY=sk-...
 ```
+
+Không commit `.env`, `.venv*/`, model local, hoặc cache dependency. Các file này đã được ignore trong `.gitignore`.
 
 ---
 
@@ -683,11 +728,17 @@ Chấm bằng automated test suite (`pytest tests/ -v`). Mỗi task có test ri�
 
 ```bash
 # Chạy toàn bộ test suite
-pytest tests/ -v
+.venv311/bin/python -m pytest tests/ -v
 
 # Chạy từng task
-pytest tests/test_individual.py::TestTask1 -v
-pytest tests/test_individual.py::TestTask5 -v
+.venv311/bin/python -m pytest tests/test_individual.py::TestTask1 -v
+.venv311/bin/python -m pytest tests/test_individual.py::TestTask5 -v
+```
+
+Nếu `.venv311` chưa có `pytest`:
+
+```bash
+.venv311/bin/pip install pytest
 ```
 
 ---
